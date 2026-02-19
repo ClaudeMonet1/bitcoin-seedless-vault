@@ -46,7 +46,7 @@ endif
 
 # Setting to allow building variant applications
 VARIANT_PARAM = COIN
-VARIANT_VALUES = bitcoin_testnet bitcoin bitcoin_recovery
+VARIANT_VALUES = bitcoin_testnet bitcoin bitcoin_recovery bitcoin_testnet_vault bitcoin_vault
 
 # simplify for tests
 ifndef COIN
@@ -116,9 +116,53 @@ else ifeq ($(COIN),bitcoin_recovery)
 
     APPNAME = "Bitcoin Recovery"
 
+else ifeq ($(COIN),bitcoin_testnet_vault)
+    # Application allowed derivation paths (testnet): any purpose + coin type 1'
+    PATH_APP_LOAD_PARAMS = "*/1'"
+
+    # Bitcoin testnet vault
+    DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
+    DEFINES   += BIP44_COIN_TYPE=1
+    DEFINES   += COIN_P2PKH_VERSION=111
+    DEFINES   += COIN_P2SH_VERSION=196
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tb\"
+    DEFINES   += COIN_COINID_SHORT=\"TEST\"
+    DEFINES   += BITCOIN_VAULT
+    DEFINES   += NBGL_KEYPAD
+    ENABLE_NBGL_KEYPAD = 1
+
+    APP_SOURCE_PATH += src/seedless
+
+    APPNAME = "Bitcoin Test"
+
+else ifeq ($(COIN),bitcoin_vault)
+    # Application allowed derivation paths (mainnet): any purpose + coin type 0'
+    PATH_APP_LOAD_PARAMS = "*/0'"
+
+    # the version for performance tests automatically approves all requests
+    # there is no reason to ever compile the mainnet app with this flag
+    ifneq ($(AUTOAPPROVE_FOR_PERF_TESTS),0)
+        $(error Use testnet app for performance tests)
+    endif
+
+    # Bitcoin mainnet vault
+    DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
+    DEFINES   += BIP44_COIN_TYPE=0
+    DEFINES   += COIN_P2PKH_VERSION=0
+    DEFINES   += COIN_P2SH_VERSION=5
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"bc\"
+    DEFINES   += COIN_COINID_SHORT=\"BTC\"
+    DEFINES   += BITCOIN_VAULT
+    DEFINES   += NBGL_KEYPAD
+    ENABLE_NBGL_KEYPAD = 1
+
+    APP_SOURCE_PATH += src/seedless
+
+    APPNAME = "Bitcoin"
+
 else
     ifeq ($(filter clean,$(MAKECMDGOALS)),)
-        $(error Unsupported COIN - use bitcoin_testnet, bitcoin)
+        $(error Unsupported COIN - use bitcoin_testnet, bitcoin, bitcoin_recovery, bitcoin_testnet_vault, bitcoin_vault)
     endif
 endif
 
